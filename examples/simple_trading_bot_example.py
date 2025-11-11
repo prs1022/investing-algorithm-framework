@@ -20,10 +20,10 @@ from investing_algorithm_framework import (
 class RSIEMACrossoverStrategy(TradingStrategy):
     time_unit = TimeUnit.HOUR
     interval = 2
-    symbols = ["BTC", "ETH"]
+    symbols = ["SOL", "LTC"]
     position_sizes = [
-        PositionSize(symbol="BTC", percentage_of_portfolio=20.0),
-        PositionSize(symbol="ETH", percentage_of_portfolio=20.0),
+        PositionSize(symbol="SOL", percentage_of_portfolio=20.0),
+        PositionSize(symbol="LTC", percentage_of_portfolio=20.0),
     ]
 
     def __init__(
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     )
 
     backtest_range = BacktestDateRange(
-        start_date=datetime(2025, 9, 1, tzinfo=timezone.utc),
+        start_date=datetime(2025, 6, 1, tzinfo=timezone.utc),
         end_date=datetime(2025, 11, 1, tzinfo=timezone.utc),
     )
 

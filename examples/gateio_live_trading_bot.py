@@ -44,10 +44,10 @@ class RSIEMACrossoverLiveStrategy(TradingStrategy):
     
     time_unit = TimeUnit.HOUR
     interval = 2  # 每2小时运行一次
-    symbols = ["BTC", "ETH"]
+    symbols = ["SOL", "ETH"]
     
     position_sizes = [
-        PositionSize(symbol="BTC", percentage_of_portfolio=20.0),
+        PositionSize(symbol="SOL", percentage_of_portfolio=20.0),
         PositionSize(symbol="ETH", percentage_of_portfolio=20.0)
     ]
 
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     app.add_market(
         market="gateio",
         trading_symbol="USDT",
-        initial_balance=1000  # 初始资金（仅用于记录）
+        initial_balance=20  # 初始资金（仅用于记录）
     )
 
     # 🚀 启动实盘交易！
