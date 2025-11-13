@@ -20,10 +20,10 @@ from investing_algorithm_framework import (
 class RSIEMACrossoverStrategy(TradingStrategy):
     time_unit = TimeUnit.HOUR
     interval = 2
-    symbols = ["SOL", "LTC"]
+    symbols = ["LTC", "ETH"]
     position_sizes = [
-        PositionSize(symbol="SOL", percentage_of_portfolio=20.0),
         PositionSize(symbol="LTC", percentage_of_portfolio=20.0),
+        PositionSize(symbol="ETH", percentage_of_portfolio=20.0),
     ]
 
     def __init__(
@@ -66,6 +66,7 @@ class RSIEMACrossoverStrategy(TradingStrategy):
                     symbol=full_symbol,
                     pandas=True,
                     window_size=800,
+                    data_provider_identifier="ccxt",
                 )
             )
             data_sources.append(
@@ -77,6 +78,7 @@ class RSIEMACrossoverStrategy(TradingStrategy):
                     symbol=full_symbol,
                     pandas=True,
                     window_size=800,
+                    data_provider_identifier="ccxt",
                 )
             )
 

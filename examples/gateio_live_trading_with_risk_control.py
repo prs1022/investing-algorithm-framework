@@ -35,6 +35,27 @@ logger = logging.getLogger(__name__)
 # 加载环境变量
 load_dotenv()
 
+# 导入邮件通知模块
+import os
+
+try:
+    from email_notifier import EmailNotifier
+
+    # 初始化邮件通知器（从环境变量读取）
+    EMAIL_NOTIFIER = None
+    if os.getenv("EMAIL_SENDER") and os.getenv("EMAIL_AUTH_CODE"):
+        EMAIL_NOTIFIER = EmailNotifier(
+            sender_email=os.getenv("EMAIL_SENDER"),
+            auth_code=os.getenv("EMAIL_AUTH_CODE"),
+            receiver_email=os.getenv("EMAIL_RECEIVER", os.getenv("EMAIL_SENDER")),
+        )
+        logger.info("📧 邮件通知已启用")
+    else:
+        logger.warning("⚠️  邮件通知未配置，将跳过邮件发送")
+except ImportError:
+    EMAIL_NOTIFIER = None
+    logger.warning("⚠️  email_notifier 模块未找到，邮件通知功能不可用")
+
 
 def generate_fibonacci_levels(max_level: int = 10) -> List[float]:
     """
@@ -54,7 +75,9 @@ class RiskControlledStrategy(TradingStrategy):
 
     time_unit = TimeUnit.HOUR
     interval = 2
-    symbols = ["LTC", "SOL"]
+    # 使用主流币种，确保 Gate.io 支持
+    # ⚠️ 不要改成 LTC/SOL，它们可能不被支持！
+    symbols = ["BTC", "ETH"]
 
     # 风险控制参数
     INITIAL_CAPITAL = 20.0  # 初始资金 20 USDT
@@ -64,11 +87,11 @@ class RiskControlledStrategy(TradingStrategy):
 
     position_sizes = [
         PositionSize(
-            symbol="LTC",
+            symbol="BTC",
             percentage_of_portfolio=MAX_POSITION_SIZE_PCT,  # 10%
         ),
         PositionSize(
-            symbol="SOL",
+            symbol="ETH",
             percentage_of_portfolio=MAX_POSITION_SIZE_PCT,  # 10%
         ),
     ]
@@ -120,6 +143,7 @@ class RiskControlledStrategy(TradingStrategy):
                     symbol=full_symbol,
                     pandas=True,
                     window_size=200,
+                    data_provider_identifier="ccxt",
                 )
             )
             # EMA 数据源
@@ -132,6 +156,7 @@ class RiskControlledStrategy(TradingStrategy):
                     symbol=full_symbol,
                     pandas=True,
                     window_size=200,
+                    data_provider_identifier="ccxt",
                 )
             )
 
@@ -515,8 +540,8 @@ if __name__ == "__main__":
     # response = input("\n是否继续？(输入 'YES' 继续): ")
 
     # if response != "YES":
-        # print("❌ 已取消")
-        # exit()
+    # print("❌ 已取消")
+    # exit()
 
     print("\n🚀 启动交易机器人...\n")
 
@@ -551,8 +576,46 @@ if __name__ == "__main__":
     print("\n⏰ 机器人将持续运行...")
     print("   按 Ctrl+C 可以随时停止\n")
 
-    try:
-        app.run(number_of_iterations=999999)
-    except KeyboardInterrupt:
-        print("\n\n🛑 用户中断，正在安全退出...")
-        print("✅ 机器人已停止")
+    max_retries = 5
+    retry_count = 0
+
+    while retry_count < max_retries:
+        try:
+            app.run(number_of_iterations=999999)
+            break  # 正常结束
+
+        except KeyboardInterrupt:
+            print("\n\n🛑 用户中断，正在安全退出...")
+            print("✅ 机器人已停止")
+            break
+
+        except Exception as e:
+            retry_count += 1
+            error_type = type(e).__name__
+
+            # 网络相关错误，自动重试
+            if any(
+                err in str(e) for err in ["timeout", "Timeout", "Connection", "Network"]
+            ):
+                logger.error(f"⚠️  网络错误 ({error_type}): {str(e)[:100]}")
+
+                if retry_count < max_retries:
+                    wait_time = min(60 * retry_count, 300)  # 最多等待 5 分钟
+                    logger.warning(
+                        f"🔄 将在 {wait_time} 秒后重试 "
+                        f"(第 {retry_count}/{max_retries} 次)"
+                    )
+                    import time
+
+                    time.sleep(wait_time)
+                    logger.info("🚀 重新启动机器人...")
+                else:
+                    logger.critical(f"❌ 达到最大重试次数 ({max_retries})，程序退出")
+                    break
+            else:
+                # 其他错误，记录并退出
+                logger.critical(f"❌ 严重错误 ({error_type}): {e}")
+                import traceback
+
+                logger.error(traceback.format_exc())
+                break
